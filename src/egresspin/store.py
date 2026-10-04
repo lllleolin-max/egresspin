@@ -14,7 +14,8 @@ class ImportStore:
     def import_url(self,key,url,fetcher,*,headers=None):
         if not isinstance(key,str) or not re.fullmatch('[A-Za-z0-9_-]{1,64}',key):raise PinError('invalid_key')
         canonical=fetcher.policy.target(url).url
-        request_digest=hashlib.sha256(json.dumps([canonical,_headers(headers)],sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        normalized_headers=_headers(headers)
+        request_digest=hashlib.sha256(json.dumps([canonical,normalized_headers],sort_keys=True,separators=(',',':')).encode()).hexdigest()
         with closing(sqlite3.connect(self.path)) as db:
             old=db.execute('SELECT request_sha256,sha256 FROM imports WHERE key=?',(key,)).fetchone()
             number,total=db.execute('SELECT count(*),coalesce(sum(length(body)),0) FROM imports').fetchone()
@@ -22,7 +23,7 @@ class ImportStore:
             if old[0]!=request_digest:raise PinError('identity_conflict')
             return {'key':key,'stored':False,'sha256':old[1]}
         if number>=self.max_items or total>=self.max_bytes and fetcher.policy.max_body>0:raise PinError('import_quota')
-        result=fetcher.fetch(canonical,headers=headers)
+        result=fetcher.fetch(canonical,headers=normalized_headers)
         if result.status!=200:raise PinError('import_status',result.audit)
         digest=hashlib.sha256(result.body).hexdigest()
         witness=json.dumps([asdict(hop) for hop in result.audit],sort_keys=True,separators=(',',':'))
