@@ -11,7 +11,7 @@ from egresspin import Fetcher,PinError,Policy
 p=argparse.ArgumentParser();p.add_argument('--output',required=True);a=p.parse_args();out=Path(a.output).resolve();out.mkdir()
 fixture=Path(__file__).resolve().parents[1]/'tests/fixtures';cert=fixture/'public-lab-cert.pem';key=fixture/'public-lab-key.pem'
 raw=json.dumps({'orders':[{'id':str(i),'amount_cents':97*i+23} for i in range(1000)]},separators=(',',':')).encode()
-small=b'normal small laboratory response';events=[];sni=[];begun=time.perf_counter_ns()
+small=b'normal small laboratory response';events=[];sni=[];tls_peers=[];begun=time.perf_counter_ns()
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         events.append(dict(role=self.server.role,path=self.path,host=self.headers['Host'],authorization=self.headers.get('Authorization'),x_api_key=self.headers.get('X-Api-Key'),cookie=self.headers.get('Cookie')))
@@ -27,7 +27,10 @@ class Handler(BaseHTTPRequestHandler):
 def listener(ip,role,port=0,tls=False):
     s=ThreadingHTTPServer((ip,port),Handler);s.role=role;s.daemon_threads=True
     if tls:
-        ctx=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER);ctx.load_cert_chain(cert,key);ctx.set_servername_callback(lambda sock,host,ctx:sni.append(host));s.socket=ctx.wrap_socket(s.socket,server_side=True)
+        ctx=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER);ctx.load_cert_chain(cert,key)
+        def observe(sock,host,ctx):
+            sni.append(host);tls_peers.append(dict(sni=host,listener_address=sock.getsockname()[0],peer_address=sock.getpeername()[0]))
+        ctx.set_servername_callback(observe);s.socket=ctx.wrap_socket(s.socket,server_side=True)
     t=Thread(target=s.serve_forever,daemon=True);t.start();return s,t
 primary,pt=listener('127.0.0.1','primary');forbidden,ft=listener('127.0.0.2','forbidden',primary.server_port)
 secondary,st=listener('127.0.0.1','secondary');secure,tt=listener('127.0.0.1','tls',tls=True)
@@ -85,7 +88,7 @@ try:
     for case,url,expected,expected_code in cases:
         for repetition in range(3):
             for mode in ['sdk','curl']:
-                directory=out/f'{case}-{repetition}-{mode}';directory.mkdir();resolver=Resolver(case);before=len(events);before_sni=len(sni);start=time.perf_counter_ns()
+                directory=out/f'{case}-{repetition}-{mode}';directory.mkdir();resolver=Resolver(case);before=len(events);before_sni=len(sni);before_tls=len(tls_peers);start=time.perf_counter_ns()
                 if mode=='sdk':
                     prepare=time.perf_counter_ns();fetcher=Fetcher(Policy(origin_strings,testing_ips=('127.0.0.1',)),resolver=resolver,cafile=str(cert));prepare_ns=time.perf_counter_ns()-prepare
                     try:r=fetcher.fetch(url,headers=caller);result=dict(code=None,body=r.body,hops=[asdict(h) for h in r.audit])
@@ -98,7 +101,7 @@ try:
                     values=json.loads(body);okay=okay and len(values['orders'])==1000 and sum(o['amount_cents'] for o in values['orders'])==48474500
                 if case=='cross':okay=okay and len(actual)==2 and actual[-1]['authorization'] is None and actual[-1]['cookie'] is None and actual[-1]['x_api_key'] is None
                 report=dict(case=case,mode=mode,repetition=repetition,result='PASS' if okay else 'FAIL',fixture_setup_ns=setup_ns,client_prepare_ns=prepare_ns,total_client_ns=elapsed,
-                            dns_calls=resolver.calls,actual_http_requests=actual,actual_sni=sni[before_sni:],body_bytes=None if body is None else len(body),body_sha256=None if body is None else hashlib.sha256(body).hexdigest(),**result)
+                            dns_calls=resolver.calls,actual_http_requests=actual,actual_sni=sni[before_sni:],native_tls_peers=tls_peers[before_tls:],body_bytes=None if body is None else len(body),body_sha256=None if body is None else hashlib.sha256(body).hexdigest(),**result)
                 (directory/'result.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8');reports.append(report)
     # A weaker URL-only pattern is explicitly separate from mature equivalent
     # curl. Its actual ordinary connector performs a second changed DNS lookup.
