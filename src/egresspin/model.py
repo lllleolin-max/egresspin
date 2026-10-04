@@ -39,7 +39,8 @@ def normalize(url,max_url=8192):
         parts=urlsplit(url)
         if parts.scheme not in {'http','https'} or not parts.netloc or parts.username is not None or parts.password is not None or parts.fragment:
             raise PinError('unsupported_url')
-        host=parts.hostname;port=parts.port or (443 if parts.scheme=='https' else 80)
+        host=parts.hostname;port=parts.port
+        if port is None:port=443 if parts.scheme=='https' else 80
     except ValueError:raise PinError('invalid_url') from None
     if not host or '%' in host or not 1<=port<=65535:raise PinError('invalid_host')
     host=host.lower()

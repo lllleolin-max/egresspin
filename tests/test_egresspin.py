@@ -8,7 +8,7 @@ class Tests(unittest.TestCase):
     def fetcher(self,port,**kw):return Fetcher(self.policy(port,**kw),resolver=lambda h,p:['127.0.0.1'])
     def test_normalize(self):
         self.assertEqual(normalize('HTTP://EXAMPLE.COM:80/a?x=1').url,'http://example.com/a?x=1')
-        for url in ['file:///etc/a','http://user:pw@host/a','http://127.1/a','http://2130706433/','http://h/%GG','http://h/a#x','http://xn--abc/a','http://h\\a','http://[fe80::1%25lo]/','http://h/a\r\n']:
+        for url in ['file:///etc/a','http://user:pw@host/a','http://127.1/a','http://2130706433/','http://h/%GG','http://h/a#x','http://xn--abc/a','http://h\\a','http://[fe80::1%25lo]/','http://h/a\r\n','http://h:0/','https://h:0/']:
             with self.subTest(url=url),self.assertRaises(PinError):normalize(url)
     def test_policy_defaults(self):
         policy=Policy(('https://example.com',))
