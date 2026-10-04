@@ -19,6 +19,21 @@ class _Wire:
     def __init__(self,sock,deadline):self.sock=sock;self.deadline=deadline
     def makefile(self,mode):return io.BufferedReader(_DeadlineRaw(self.sock,self.deadline))
 
+class _FramedResponse(http.client.HTTPResponse):
+    """Keep stdlib buffering; require the actual RFC chunk size and delimiter."""
+    def _read_next_chunk_size(self):
+        line=self.fp.readline(http.client._MAXLINE+1)
+        if len(line)>http.client._MAXLINE or not line.endswith(b'\r\n'):raise PinError('invalid_chunk_framing')
+        number,separator,extension=line[:-2].partition(b';')
+        if separator:number=number.rstrip(b' \t')
+        if re.fullmatch(rb'[0-9A-Fa-f]+',number) is None:raise PinError('invalid_chunk_framing')
+        return int(number,16)
+    def _get_chunk_left(self):
+        if self.chunk_left==0:
+            if self._safe_read(2)!=b'\r\n':raise PinError('invalid_chunk_framing')
+            self.chunk_left=None
+        return super()._get_chunk_left()
+
 def _headers(values):
     if values is None:return {}
     if not isinstance(values,dict) or len(values)>32:raise PinError('invalid_headers')
@@ -90,7 +105,7 @@ class Fetcher:
                 request='GET '+target.path+' HTTP/1.1\r\nHost: '+target.authority+'\r\nConnection: close\r\nAccept-Encoding: identity\r\n'
                 request+=''.join(k+': '+v+'\r\n' for k,v in request_headers.items())+'\r\n'
                 sock.sendall(request.encode('ascii'))
-                response=http.client.HTTPResponse(_Wire(sock,deadline));response.begin();status=response.status
+                response=_FramedResponse(_Wire(sock,deadline));response.begin();status=response.status
                 if not 200<=status<=599:raise PinError('unsupported_response_status')
                 response_headers=response.getheaders()
                 if sum(len(k)+len(v)+4 for k,v in response_headers)>self.policy.max_headers:raise PinError('response_headers_quota')
