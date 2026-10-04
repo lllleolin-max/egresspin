@@ -57,5 +57,9 @@ one-time tooling; ordinary runtime/testing does not require it.
 `python -I -m unittest discover -s tests -v` tests actual HTTP/TLS listeners,
 hostname/SNI, changed DNS, fallback, mapped IPs, redirects/header stripping,
 refusals, whole bytes, native SQL and the registered console. Configured CI is
-Ubuntu/Windows Python3.11/3.14; execution/public delivery is pending. Initial
-feature tests are not three repair iterations or an independently scored project.
+Ubuntu/Windows Python3.11/3.14; execution/public delivery is pending. Three actual
+postbaseline repairs and unchanged ordinary-wheel FAIL-to-PASS probes are recorded
+in [ITERATIONS](docs/ITERATIONS.md). The [pilot](docs/PILOT.md) keeps equivalent
+correct curl results, complete native consumers, preparation costs and a slower
+simple rejection. C/T/I and independent engineering assessment remain unscored;
+the builder's prepublication engineering score is85.20, below the requested95.

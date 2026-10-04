@@ -45,12 +45,17 @@ header quota. Fixed metadata/serialization/TLS/socket buffering add memory beyon
 raw body bytes. Content-Length is ASCII decimal, large leading zeros accepted
 without unbounded integer conversion by policy checking, duplicate length and
 TE+length refused; only ordinary close/length or chunked framing is supported.
-Content encodings are stored raw; no gzip inflation occurs. The socket's file
+Chunk sizes require hexadecimal digits and chunk-data delimiters require CRLF.
+Valid leading zeros, uppercase hex and ignored extensions remain accepted. The
+narrow framing guard uses HTTPResponse's private helpers, checked against CPython
+3.11 and3.14 source; future changes require actual wire probes. This is not a
+claim to implement every HTTP grammar or trailer semantic.
+Content encodings are stored raw; no gzip inflation occurs.
 Non-final informational responses other than standard100continue are explicitly
 unsupported and refused; WebSocket upgrades and103EarlyHints are not interpreted.
 Redirect Location must be a nonempty bounded ASCII URI-reference without spaces
 or control characters before it is joined, and then the resulting URL is rechecked.
-reader resets each receive timeout from a monotonic whole-fetch deadline, so
+The socket's file reader resets each receive timeout from a monotonic whole-fetch deadline, so
 slow socket reads do not receive a fresh per-hop time budget. Blocking system
 getaddrinfo cannot be preempted by the stdlib; its result is rejected if the deadline
 has elapsed, but DNS can make caller wall time longer. A custom resolver is a
@@ -61,7 +66,8 @@ ImportStore is a trusted cooperative SQLite application file, not a safe arbitra
 foreign-file converter. Default1000 items/max10000, total raw bodies16MiB/max160MiB;
 metadata, journals and pages cost extra and are not a disk quota. Request identity
 hash binds normalized URL and sorted validated headers without storing header
-values. Existing same-key/same-identity returns its immutable saved snapshot;
+values. The original caller mapping is observed once and the same private snapshot
+supplies both identity and the sent request. Existing same-key/same-identity returns its immutable saved snapshot;
 changed identity rejects. A new fetch completes outside the SQLite transaction,
 then INSERT of body/hash/audit commits atomically, quotas/conflict rechecked under
 BEGIN IMMEDIATE. Different concurrent results do not overwrite each other. GET
@@ -82,3 +88,10 @@ Potential useful difference here is auditable per-hop pin/policy/body-import
 evidence with independently observed listeners, not invention of those primitives.
 Correct mature curl RESOLVE plus explicit per-hop same policy remains a required
 equivalent control; a weaker URL-only client cannot be the only competitor.
+
+[RFC 9112 chunk framing](https://www.rfc-editor.org/rfc/rfc9112.html#section-7.1)
+and official [CPython3.11](https://raw.githubusercontent.com/python/cpython/3.11/Lib/http/client.py)
+and [3.14 HTTP client source](https://raw.githubusercontent.com/python/cpython/3.14/Lib/http/client.py)
+were consulted for the third-round malformed-framing finding. Existing numeric
+socket/TLS/HTTP/SQLite mechanisms are integrated; DNS pinning, secure redirects,
+idempotent snapshots and SSRF prevention are not claimed inventions.
