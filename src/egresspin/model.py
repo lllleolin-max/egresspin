@@ -2,6 +2,7 @@
 from dataclasses import dataclass,field
 import ipaddress,re
 from urllib.parse import urlsplit,urlunsplit
+from .registry import reachable
 
 class PinError(Exception):
     def __init__(self,code,audit=()):
@@ -85,7 +86,10 @@ class Policy:
         return target
     def permits(self,ip):
         value=address(ip)
-        return str(value) in self.testing_ips or (value.is_global and not value.is_multicast and not value.is_unspecified)
+        if str(value) in self.testing_ips:return True
+        if value.is_multicast or value.is_unspecified:return False
+        known=reachable(value)
+        return known if known is not None else value.is_global
 
 @dataclass(frozen=True)
 class Hop:

@@ -14,6 +14,28 @@ connect has no second lookup. Literal IPs need no DNS lookup. IPv4/IPv6 family i
 selected from that validated numeric address. Fallback tries only validated answers
 in order within the attempts budget. TCP peer must equal the chosen address.
 
+Address classification uses a static complete snapshot of the official IANA
+IPv4/IPv6 Special-Purpose Registries (both table last-update2025-10-09,
+retrieved2026-10-05UTC). All51 prefixes are preserved in registry.py, including
+explicit False, explicit True exceptions and unknown/N/A/terminated rows. The
+most specific matching prefix wins; mapped IPv6 is normalized to its underlying
+IPv4 before lookup. Explicit True/False overrides stdlib classification; unknown
+or unmatched addresses retain stdlib is_global fallback. Multicast/unspecified
+still deny; the original exact testing_ips override has priority. This fixes
+supported default-deny omissions, not by narrowing the original address scope.
+It is not automatic live IANA, guaranteed routability or network SSRF certification.
+
+Snapshot sources: [official IPv4 registry](https://www.iana.org/assignments/iana-ipv4-special-registry/)
+and [official IPv6 registry](https://www.iana.org/assignments/iana-ipv6-special-registry/).
+Raw CSV hashes are embedded in registry.py and source/capture metadata is in the
+successor evidence. To update, capture BOTH entire current CSVs, review changes
+and longest-prefix True exceptions, regenerate the full table, rerun the immutable
+original probes, raw-table boundary oracle and owned-only HTTP/TLS/CLI workflows.
+The one-time successor/generate_registry.py preserves raw tables and timestamps;
+it refuses overwriting a capture or runtime table. Runtime never downloads tables.
+IANA changes and future stdlib releases require a new reviewed snapshot/release;
+unknown records and network translation/routing outside this host remain limits.
+
 HTTPS uses a default verifying SSLContext (minimum TLS1.2), original canonical
 hostname as SNI, and its certificate hostname validation; a trusted optional CA
 file does not disable hostname checks. TLS failure may fall back only to another

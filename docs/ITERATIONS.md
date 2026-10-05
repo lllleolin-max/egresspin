@@ -54,3 +54,24 @@ Later actual successful invocations have separate records. None count as product
 findings or rounds. Expected native TLS ConnectionResetError after wrong-hostname
 rejection remains in raw receiver logs. No push/tag/release/actual public CI is
 attributed to this agent; new supported counterexamples remain eligible for repair.
+
+Round4 independent current-IANA P2 at frozen719183d2ac6ea7bd153a49e6584f0a2225ca078f:
+stdlib classification let192.88.99.2, its mapped form,100:0:0:1::/64 and5f00::/16
+through the original default-deny-non-global guarantee. Independent original
+iana_original.py SHA173acc4422e75fee2d7964b437b5c9fcd6a236fa8940475498a19bb574439f74
+and registry_full_original.py SHAefb2a39781019a13132e922a1cf881aca0e3cc11f395d707c126c07d25d5bacc
+are byte-copied unchanged into successor evidence. Actual ordinary719 before
+both exit1. The substantive repair is full51-prefix current-IANA snapshot with
+most-specific priority, explicit True/False, mapped normalization and unchanged
+test override; unknown fields preserve stdlib fallback. Exact afterSHA and fresh
+ordinary original-probe exits are recorded in successor/HANDOFF, not anticipated.
+Raw integer-mask oracle additionally checks prefix first/interior/last/adjacent
+points and True exceptions, independently from product registry/parser. Native
+mixed-DNS controls can attempt only the first owned loopback address, never a
+special address: bad global classification produced actual ownedGET before, and
+must private-refuse with0GET after. No special/nonowned address was connected.
+Original719/977manifest/HANDOFF/Qself85.20/rootQA/publicCI/prepared assets remain
+unchanged; successor evidence is separate. Same rootcause full-table coverage is
+one fourth correction, not separate rounds per address. A supplementary harness
+missing-token-space parse error is retained as method-only/uncalled, not product
+FAIL or a round. No new acceptance or independently forced score is claimed.
